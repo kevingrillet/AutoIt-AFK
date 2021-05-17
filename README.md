@@ -6,7 +6,7 @@
 [![SciTE](https://img.shields.io/badge/Editor-SciTE-blue)](https://www.autoitscript.com/site/autoit-script-editor/)
 [![Koda](https://img.shields.io/badge/Editor-Koda-lightgrey)](http://koda.darkhost.ru/wiki/doku.php?id=koda:en:start)
 
-The purpose of this small script is to prevent Windows from going to standby and to block the standby screen.
+The purpose of this small script is to prevent Windows from going to sleep or the screensaver.
 
 - At first it will click on the `ver. num` key twice after a set time (ex: 5 minutes).
 - In a second time it will do this action only if a certain process is active (ex: Bluestacks.exe).

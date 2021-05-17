@@ -39,10 +39,16 @@ Local $iScreensaverTime = 5 * 60 * 1000 ; 5 min
 Local $sIniPath = @ScriptDir & "\AutoIt-AFK.ini"
 Local $sProcess = ""
 
-;~ ========== GUI ==========
+;~ ========== OPT ==========
 Opt("GUIOnEventMode", 1)
+Opt("TrayAutoPause", 0) ;0=no pause, 1=Pause
+Opt("TrayMenuMode", 3) ;0=append, 1=no default menu, 2=no automatic check, 4=menuitemID  not return
+Opt("TrayOnEventMode", 1) ;0=disable, 1=enable
+
+;~ ========== GUI ==========
 #Region ### START Koda GUI section ###
 $fAutoItAFK = GUICreate("AutoIt AFK", 390, 392, -1, -1, $WS_SYSMENU)
+GUISetOnEvent($GUI_EVENT_CLOSE, "fAutoItAFKClose")
 $Log = GUICtrlCreateTab(3, 3, 380, 356)
 $tsOptions = GUICtrlCreateTabItem("Options")
 $cbEnable = GUICtrlCreateCheckbox("Enable", 15, 36, 97, 17)
@@ -63,15 +69,18 @@ $eProcess = GUICtrlCreateEdit("", 15, 100, 353, 249)
 $tsLog = GUICtrlCreateTabItem("Log")
 $eLog = GUICtrlCreateEdit("", 15, 36, 353, 313)
 GUICtrlCreateTabItem("")
-;~ $miShow = TrayCreateItem("Show AutoIt AFK")
+$miShow = TrayCreateItem("Show AutoIt AFK")
+TrayItemSetOnEvent($miShow, "_Show")
+$miShutDown = TrayCreateItem("Shut Down AutoIt AFK")
+TrayItemSetOnEvent($miShutDown, "_Exit")
 ;~ GUISetState(@SW_SHOW)
 #EndRegion ### END Koda GUI section ###
 
 ;~ ========== MAINLOOP ==========
 _LoadIni()
-;~ If Not FileExists($sIniPath) Then
-	GUISetState(@SW_SHOW)
-;~ EndIf
+If Not FileExists($sIniPath) Then
+	_Show()
+EndIf
 
 While 1
 	Sleep(100)
@@ -98,13 +107,13 @@ While 1
 			EndIf
 		EndIf
 	EndIf
-	$iMsg = TrayGetMsg()
-	If $iMsg = $miShow Then
-		GUISetState(@SW_SHOW)
-	EndIf
 WEnd
 
 ;~ ========== FUNC ==========
+Func _Exit()
+	_SaveIni()
+	Exit
+EndFunc
 Func _LoadIni()
 	GUICtrlSetData($iMin, IniRead($sIniPath, "AutoIt-AFK", "Min", 5))
 	iMinChange()
@@ -132,6 +141,9 @@ Func _SaveIni()
 	IniWrite($sIniPath, "AutoIt-AFK", "CheckProcess", GUICtrlRead($rCheckProcess))
 	IniWrite($sIniPath, "AutoIt-AFK", "Min", GUICtrlRead($iMin))
 EndFunc   ;==>_SaveIni
+Func _Show()
+	GUISetState(@SW_SHOW)
+EndFunc
 Func bSaveClick()
 	_SaveIni()
 EndFunc   ;==>bSaveClick

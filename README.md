@@ -13,5 +13,4 @@ The purpose of this small script is to prevent Windows from going to sleep or th
 
 ## TODO
 
-- [ ] Show UI on Launch if `AutoIt-AFK.ini` is not existing.
 - [ ] Find the system values (Screensaver, Sleep, ...)

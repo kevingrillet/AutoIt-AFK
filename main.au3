@@ -52,7 +52,7 @@ GUISetOnEvent($GUI_EVENT_CLOSE, "fAutoItAFKClose")
 $Log = GUICtrlCreateTab(3, 3, 380, 356)
 $tsOptions = GUICtrlCreateTabItem("Options")
 $cbEnable = GUICtrlCreateCheckbox("Enable", 15, 36, 97, 17)
-GUICtrlSetState(-1, $GUI_CHECKED)
+GUICtrlSetState($cbEnable, $GUI_CHECKED)
 GUICtrlSetOnEvent($cbEnable, "cbEnableClick")
 $iMin = GUICtrlCreateInput("", 168, 34, 65, 21, BitOR($GUI_SS_DEFAULT_INPUT, $ES_NUMBER))
 GUICtrlSetOnEvent($iMin, "iMinChange")
@@ -60,9 +60,9 @@ $bSave = GUICtrlCreateButton("Save", 295, 36, 75, 17)
 GUICtrlSetOnEvent($bSave, "bSaveClick")
 $gMode = GUICtrlCreateGroup("", 16, 56, 353, 41)
 $rAlways = GUICtrlCreateRadio("Always", 24, 72, 113, 17)
+GUICtrlSetState($rAlways, $GUI_CHECKED)
 GUICtrlSetOnEvent($rAlways, "rClick")
 $rCheckProcess = GUICtrlCreateRadio("Check Process", 208, 72, 113, 17)
-GUICtrlSetState(-1, $GUI_CHECKED)
 GUICtrlSetOnEvent($rCheckProcess, "rClick")
 GUICtrlCreateGroup("", -99, -99, 1, 1)
 $eProcess = GUICtrlCreateEdit("", 15, 100, 353, 249)
@@ -77,13 +77,14 @@ TrayItemSetOnEvent($miShutDown, "_Exit")
 #EndRegion ### END Koda GUI section ###
 
 ;~ ========== MAINLOOP ==========
+_GUICtrlEdit_InsertText($eLog, _NowCalc() & " Starting")
 _LoadIni()
 If Not FileExists($sIniPath) Then
 	_Show()
 EndIf
 
 While 1
-	Sleep(100)
+	Sleep(1000)
 	If GUICtrlRead($cbEnable) = $GUI_CHECKED Then
 		; If _idle_time + 10s > screensaver_time
 		$iIdleTime = _Timer_GetIdleTime() + 10 * 1000
@@ -93,14 +94,14 @@ While 1
 				For $iLine = 0 To _GUICtrlEdit_GetLineCount($eProcess)
 					$sProcess = _GUICtrlEdit_GetLine($eProcess, $iLine)
 					If ProcessExists($sProcess) Then
-						_GUICtrlEdit_InsertText($eLog, @LF & _NowCalc() & " run [" & $sProcess & "]")
+						_GUICtrlEdit_InsertText($eLog, @CRLF & _NowCalc() & " run [" & $sProcess & "]")
 						; Send ver num 2 times
 						Send("{NUMLOCK}")
 						Send("{NUMLOCK}")
 					EndIf
 				Next
 			Else
-				_GUICtrlEdit_InsertText($eLog, @LF & _NowCalc() & " run")
+				_GUICtrlEdit_InsertText($eLog, @CRLF & _NowCalc() & " run")
 				; Send ver num 2 times
 				Send("{NUMLOCK}")
 				Send("{NUMLOCK}")
@@ -113,7 +114,7 @@ WEnd
 Func _Exit()
 	_SaveIni()
 	Exit
-EndFunc
+EndFunc   ;==>_Exit
 Func _LoadIni()
 	GUICtrlSetData($iMin, IniRead($sIniPath, "AutoIt-AFK", "Min", 5))
 	iMinChange()
@@ -143,7 +144,7 @@ Func _SaveIni()
 EndFunc   ;==>_SaveIni
 Func _Show()
 	GUISetState(@SW_SHOW)
-EndFunc
+EndFunc   ;==>_Show
 Func bSaveClick()
 	_SaveIni()
 EndFunc   ;==>bSaveClick

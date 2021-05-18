@@ -1,5 +1,9 @@
 #Region ;**** Directives created by AutoIt3Wrapper_GUI ****
-#AutoIt3Wrapper_Outfile=.\AutoIt_AFK.exe
+#AutoIt3Wrapper_Icon=AutoIt_AFK.ico
+#AutoIt3Wrapper_Outfile=.\Build\AutoIt_AFK.exe
+#AutoIt3Wrapper_Compression=4
+#AutoIt3Wrapper_Compile_Both=y
+#AutoIt3Wrapper_UseX64=y
 #AutoIt3Wrapper_Res_Description=Script to prevent Windows from going to sleep or the screensaver.
 #AutoIt3Wrapper_Res_Fileversion=1.0.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Copyright (C) 2021

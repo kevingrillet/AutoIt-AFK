@@ -1,7 +1,9 @@
 # Custom
 BackUp
+Build
 Koda
 AutoIt-AFK.ini
+AutoIt-AFK.log
 
 # https://github.com/github/gitignore/blob/master/Global/VisualStudioCode.gitignore
 .vscode/*

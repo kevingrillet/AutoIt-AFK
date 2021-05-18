@@ -26,6 +26,7 @@
 #include <ButtonConstants.au3>
 #include <Date.au3>
 #include <EditConstants.au3>
+#include <File.au3>
 #include <GUIConstantsEx.au3>
 #include <GuiEdit.au3>
 #include <TabConstants.au3>
@@ -33,10 +34,11 @@
 #include <WindowsConstants.au3>
 
 ;~ ========== VARIABLES ==========
+Local $bRunning = True
 Local $iIdleTime = 0
-Local $iMsg = 0
 Local $iScreensaverTime = 5 * 60 * 1000 ; 5 min
 Local $sIniPath = @ScriptDir & "\AutoIt-AFK.ini"
+Local $sLogPath = @ScriptDir & "\AutoIt-AFK.log"
 Local $sProcess = ""
 
 ;~ ========== OPT ==========
@@ -77,7 +79,7 @@ TrayItemSetOnEvent($miShutDown, "_Exit")
 #EndRegion ### END Koda GUI section ###
 
 ;~ ========== MAINLOOP ==========
-_GUICtrlEdit_InsertText($eLog, _NowCalc() & " Starting")
+_Log(" Starting")
 _LoadIni()
 If Not FileExists($sIniPath) Then
 	_Show()
@@ -86,22 +88,28 @@ EndIf
 While 1
 	Sleep(1000)
 	If GUICtrlRead($cbEnable) = $GUI_CHECKED Then
+		If $iIdleTime > _Timer_GetIdleTime() + 10 * 1000 Then
+			$bRunning = True
+		EndIf
 		; If _idle_time + 10s > screensaver_time
 		$iIdleTime = _Timer_GetIdleTime() + 10 * 1000
-		If $iIdleTime > $iScreensaverTime Then
+		If $bRunning And $iIdleTime > $iScreensaverTime Then
 			If GUICtrlRead($rCheckProcess) = $GUI_CHECKED Then
 				; If process is running
+				$bRunning = False
 				For $iLine = 0 To _GUICtrlEdit_GetLineCount($eProcess)
 					$sProcess = _GUICtrlEdit_GetLine($eProcess, $iLine)
 					If ProcessExists($sProcess) Then
-						_GUICtrlEdit_InsertText($eLog, @CRLF & _NowCalc() & " run [" & $sProcess & "]")
+						_Log(" Run [" & $sProcess & "]")
 						; Send ver num 2 times
 						Send("{NUMLOCK}")
 						Send("{NUMLOCK}")
+						$bRunning = True
+						ExitLoop
 					EndIf
 				Next
 			Else
-				_GUICtrlEdit_InsertText($eLog, @CRLF & _NowCalc() & " run")
+				_Log(" Run")
 				; Send ver num 2 times
 				Send("{NUMLOCK}")
 				Send("{NUMLOCK}")
@@ -113,9 +121,11 @@ WEnd
 ;~ ========== FUNC ==========
 Func _Exit()
 	_SaveIni()
+	_Log(" Exiting")
 	Exit
 EndFunc   ;==>_Exit
 Func _LoadIni()
+	_Log(" LoadIni")
 	GUICtrlSetData($iMin, IniRead($sIniPath, "AutoIt-AFK", "Min", 5))
 	iMinChange()
 	GUICtrlSetState($cbEnable, IniRead($sIniPath, "AutoIt-AFK", "Enable", $GUI_CHECKED))
@@ -130,7 +140,12 @@ Func _LoadIni()
 	; Which we replace in the edit
 	GUICtrlSetData($eProcess, $sConverted)
 EndFunc   ;==>_LoadIni
+Func _Log($sToLog)
+	_GUICtrlEdit_InsertText($eLog, @CRLF & _NowCalc() & $sToLog)
+	_FileWriteLog($sLogPath, _NowCalc() & $sToLog & @CRLF)
+EndFunc   ;==>_Log
 Func _SaveIni()
+	_Log(" SaveIni")
 	; Read multiple lines
 	$sOriginal = GUICtrlRead($eProcess)
 	; Convert EOLs into dummy strings

@@ -140,7 +140,7 @@ Func _LoadIni()
 	; Read the string from the ini
 	$sOriginal = IniRead($sIniPath, "AutoIt-AFK", "Process", "")
 	; Convert the dummies back into EOLs
-	$sConverted = StringReplace($sOriginal, "{ENTER}", @LF)
+	$sConverted = StringReplace($sOriginal, "{ENTER}", @CRLF)
 	; Which we replace in the edit
 	GUICtrlSetData($eProcess, $sConverted)
 EndFunc   ;==>_LoadIni
@@ -154,7 +154,6 @@ Func _SaveIni()
 	$sOriginal = GUICtrlRead($eProcess)
 	; Convert EOLs into dummy strings
 	$sConverted = StringReplace($sOriginal, @CRLF, "{ENTER}")
-	$sConverted = StringReplace($sConverted, @LF, "{ENTER}")
 	; Which is written to the ini
 	IniWrite($sIniPath, "AutoIt-AFK", "Process", $sConverted)
 	IniWrite($sIniPath, "AutoIt-AFK", "Enable", GUICtrlRead($cbEnable))

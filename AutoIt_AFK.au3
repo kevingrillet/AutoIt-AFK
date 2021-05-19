@@ -2,6 +2,7 @@
 #AutoIt3Wrapper_Icon=AutoIt_AFK.ico
 #AutoIt3Wrapper_Outfile=.\Build\AutoIt_AFK.exe
 #AutoIt3Wrapper_Compression=4
+#AutoIt3Wrapper_UseUpx=y
 #AutoIt3Wrapper_Compile_Both=y
 #AutoIt3Wrapper_UseX64=y
 #AutoIt3Wrapper_Res_Description=Script to prevent Windows from going to sleep or the screensaver.
@@ -12,7 +13,7 @@
 #AutoIt3Wrapper_Res_Field=Compiler Heure|%time%
 #AutoIt3Wrapper_Res_Field=Compiler Version|AutoIt v%AutoItVer%
 #AutoIt3Wrapper_Res_Field=Auteur|kevingrillet
-#AutoIt3Wrapper_Add_Constants=n
+#AutoIt3Wrapper_Add_Constants=y
 #AutoIt3Wrapper_Run_Tidy=y
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 #cs ----------------------------------------------------------------------------
@@ -23,8 +24,6 @@
 	Version:          1
 	Script Function:  The purpose of this small script is to prevent Windows from going to sleep or the screensaver.
 #ce ----------------------------------------------------------------------------
-
-;~ ========== COMPILATION ==========
 
 ;~ ========== INCLUDES ==========
 #include <ButtonConstants.au3>

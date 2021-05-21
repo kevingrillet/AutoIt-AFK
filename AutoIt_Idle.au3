@@ -38,8 +38,8 @@
 Local $bRunning = True
 Local $iIdleTime = 0
 Local $iScreensaverTime = 5 * 60 * 1000 ; 5 min
-Local $sIniPath = @ScriptDir & "\AutoIt-Idle.ini"
-Local $sLogPath = @ScriptDir & "\AutoIt-Idle.log"
+Local $sIniPath = @ScriptDir & "\AutoIt_Idle.ini"
+Local $sLogPath = @ScriptDir & "\AutoIt_Idle.log"
 Local $sProcess = ""
 
 ;~ ========== OPT ==========
@@ -129,15 +129,15 @@ Func _Exit()
 EndFunc   ;==>_Exit
 Func _LoadIni()
 	_Log(" LoadIni")
-	GUICtrlSetData($iMin, IniRead($sIniPath, "AutoIt-Idle", "Min", 5))
+	GUICtrlSetData($iMin, IniRead($sIniPath, "AutoIt_Idle", "Min", 5))
 	iMinChange()
-	GUICtrlSetState($cbEnable, IniRead($sIniPath, "AutoIt-Idle", "Enable", $GUI_CHECKED))
+	GUICtrlSetState($cbEnable, IniRead($sIniPath, "AutoIt_Idle", "Enable", $GUI_CHECKED))
 	cbEnableClick()
-	GUICtrlSetState($rCheckProcess, IniRead($sIniPath, "AutoIt-Idle", "CheckProcess", $GUI_UNCHECKED))
+	GUICtrlSetState($rCheckProcess, IniRead($sIniPath, "AutoIt_Idle", "CheckProcess", $GUI_UNCHECKED))
 	rClick()
-	$sOriginal = IniRead($sIniPath, "AutoIt-Idle", "Process", "")
+	$sOriginal = IniRead($sIniPath, "AutoIt_Idle", "Process", "")
 	; Read the string from the ini
-	$sOriginal = IniRead($sIniPath, "AutoIt-Idle", "Process", "")
+	$sOriginal = IniRead($sIniPath, "AutoIt_Idle", "Process", "")
 	; Convert the dummies back into EOLs
 	$sConverted = StringReplace($sOriginal, "{ENTER}", @CRLF)
 	; Which we replace in the edit
@@ -154,10 +154,10 @@ Func _SaveIni()
 	; Convert EOLs into dummy strings
 	$sConverted = StringReplace($sOriginal, @CRLF, "{ENTER}")
 	; Which is written to the ini
-	IniWrite($sIniPath, "AutoIt-Idle", "Process", $sConverted)
-	IniWrite($sIniPath, "AutoIt-Idle", "Enable", GUICtrlRead($cbEnable))
-	IniWrite($sIniPath, "AutoIt-Idle", "CheckProcess", GUICtrlRead($rCheckProcess))
-	IniWrite($sIniPath, "AutoIt-Idle", "Min", GUICtrlRead($iMin))
+	IniWrite($sIniPath, "AutoIt_Idle", "Process", $sConverted)
+	IniWrite($sIniPath, "AutoIt_Idle", "Enable", GUICtrlRead($cbEnable))
+	IniWrite($sIniPath, "AutoIt_Idle", "CheckProcess", GUICtrlRead($rCheckProcess))
+	IniWrite($sIniPath, "AutoIt_Idle", "Min", GUICtrlRead($iMin))
 EndFunc   ;==>_SaveIni
 Func _Show()
 	GUISetState(@SW_SHOW)

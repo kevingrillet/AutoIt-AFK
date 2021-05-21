@@ -2,8 +2,8 @@
 BackUp
 Build
 Koda
-AutoIt-Idle.ini
-AutoIt-Idle.log
+AutoIt_Idle.ini
+AutoIt_Idle.log
 
 # https://github.com/github/gitignore/blob/master/Global/VisualStudioCode.gitignore
 .vscode/*

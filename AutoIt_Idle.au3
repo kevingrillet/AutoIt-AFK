@@ -1,10 +1,8 @@
 #Region ;**** Directives created by AutoIt3Wrapper_GUI ****
-#AutoIt3Wrapper_Icon=AutoIt_AFK.ico
-#AutoIt3Wrapper_Outfile=.\Build\AutoIt_AFK.exe
+#AutoIt3Wrapper_Icon=AutoIt_Idle.ico
+#AutoIt3Wrapper_Outfile=.\Build\AutoIt_Idle.exe
 #AutoIt3Wrapper_Compression=4
 #AutoIt3Wrapper_UseUpx=y
-#AutoIt3Wrapper_Compile_Both=y
-#AutoIt3Wrapper_UseX64=y
 #AutoIt3Wrapper_Res_Description=Script to prevent Windows from going to sleep or the screensaver.
 #AutoIt3Wrapper_Res_Fileversion=1.0.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Copyright (C) 2021
@@ -13,14 +11,14 @@
 #AutoIt3Wrapper_Res_Field=Compiler Heure|%time%
 #AutoIt3Wrapper_Res_Field=Compiler Version|AutoIt v%AutoItVer%
 #AutoIt3Wrapper_Res_Field=Auteur|kevingrillet
-#AutoIt3Wrapper_Add_Constants=y
+#AutoIt3Wrapper_Add_Constants=n
 #AutoIt3Wrapper_Run_Tidy=y
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 #cs ----------------------------------------------------------------------------
 	AutoIt Version:   3.3.14.2
 	Scite Version:    3.7.3
 	Author:           kevingrillet
-	Name:             AutoIt_AFK
+	Name:             AutoIt_Idle
 	Version:          1
 	Script Function:  The purpose of this small script is to prevent Windows from going to sleep or the screensaver.
 #ce ----------------------------------------------------------------------------
@@ -40,8 +38,8 @@
 Local $bRunning = True
 Local $iIdleTime = 0
 Local $iScreensaverTime = 5 * 60 * 1000 ; 5 min
-Local $sIniPath = @ScriptDir & "\AutoIt-AFK.ini"
-Local $sLogPath = @ScriptDir & "\AutoIt-AFK.log"
+Local $sIniPath = @ScriptDir & "\AutoIt-Idle.ini"
+Local $sLogPath = @ScriptDir & "\AutoIt-Idle.log"
 Local $sProcess = ""
 
 ;~ ========== OPT ==========
@@ -52,8 +50,8 @@ Opt("TrayOnEventMode", 1) ;0=disable, 1=enable
 
 ;~ ========== GUI ==========
 #Region ### START Koda GUI section ### Form=.\koda\forms\form1.kxf
-$fAutoItAFK = GUICreate("AutoIt AFK", 390, 392, -1, -1, $WS_SYSMENU)
-GUISetOnEvent($GUI_EVENT_CLOSE, "fAutoItAFKClose")
+$fAutoItIdle = GUICreate("AutoIt Idle", 390, 392, -1, -1, $WS_SYSMENU)
+GUISetOnEvent($GUI_EVENT_CLOSE, "fAutoItIdleClose")
 $Log = GUICtrlCreateTab(3, 3, 380, 356)
 $tsOptions = GUICtrlCreateTabItem("Options")
 $cbEnable = GUICtrlCreateCheckbox("Enable", 15, 36, 97, 17)
@@ -74,10 +72,11 @@ $eProcess = GUICtrlCreateEdit("", 15, 100, 353, 249)
 $tsLog = GUICtrlCreateTabItem("Log")
 $eLog = GUICtrlCreateEdit("", 15, 36, 353, 313)
 GUICtrlCreateTabItem("")
-$miShow = TrayCreateItem("Show AutoIt AFK")
+$miShow = TrayCreateItem("Show AutoIt Idle")
 TrayItemSetOnEvent($miShow, "_Show")
-$miShutDown = TrayCreateItem("Shut Down AutoIt AFK")
+$miShutDown = TrayCreateItem("Shut Down AutoIt Idle")
 TrayItemSetOnEvent($miShutDown, "_Exit")
+TraySetToolTip("AutoIt Idle")
 ;~ GUISetState(@SW_SHOW)
 #EndRegion ### END Koda GUI section ###
 
@@ -130,15 +129,15 @@ Func _Exit()
 EndFunc   ;==>_Exit
 Func _LoadIni()
 	_Log(" LoadIni")
-	GUICtrlSetData($iMin, IniRead($sIniPath, "AutoIt-AFK", "Min", 5))
+	GUICtrlSetData($iMin, IniRead($sIniPath, "AutoIt-Idle", "Min", 5))
 	iMinChange()
-	GUICtrlSetState($cbEnable, IniRead($sIniPath, "AutoIt-AFK", "Enable", $GUI_CHECKED))
+	GUICtrlSetState($cbEnable, IniRead($sIniPath, "AutoIt-Idle", "Enable", $GUI_CHECKED))
 	cbEnableClick()
-	GUICtrlSetState($rCheckProcess, IniRead($sIniPath, "AutoIt-AFK", "CheckProcess", $GUI_UNCHECKED))
+	GUICtrlSetState($rCheckProcess, IniRead($sIniPath, "AutoIt-Idle", "CheckProcess", $GUI_UNCHECKED))
 	rClick()
-	$sOriginal = IniRead($sIniPath, "AutoIt-AFK", "Process", "")
+	$sOriginal = IniRead($sIniPath, "AutoIt-Idle", "Process", "")
 	; Read the string from the ini
-	$sOriginal = IniRead($sIniPath, "AutoIt-AFK", "Process", "")
+	$sOriginal = IniRead($sIniPath, "AutoIt-Idle", "Process", "")
 	; Convert the dummies back into EOLs
 	$sConverted = StringReplace($sOriginal, "{ENTER}", @CRLF)
 	; Which we replace in the edit
@@ -146,7 +145,7 @@ Func _LoadIni()
 EndFunc   ;==>_LoadIni
 Func _Log($sToLog)
 	_GUICtrlEdit_InsertText($eLog, _NowCalc() & $sToLog & @CRLF)
-	_FileWriteLog($sLogPath, _NowCalc() & $sToLog & @CRLF)
+	_FileWriteLog($sLogPath, $sToLog & @CRLF)
 EndFunc   ;==>_Log
 Func _SaveIni()
 	_Log(" SaveIni")
@@ -155,10 +154,10 @@ Func _SaveIni()
 	; Convert EOLs into dummy strings
 	$sConverted = StringReplace($sOriginal, @CRLF, "{ENTER}")
 	; Which is written to the ini
-	IniWrite($sIniPath, "AutoIt-AFK", "Process", $sConverted)
-	IniWrite($sIniPath, "AutoIt-AFK", "Enable", GUICtrlRead($cbEnable))
-	IniWrite($sIniPath, "AutoIt-AFK", "CheckProcess", GUICtrlRead($rCheckProcess))
-	IniWrite($sIniPath, "AutoIt-AFK", "Min", GUICtrlRead($iMin))
+	IniWrite($sIniPath, "AutoIt-Idle", "Process", $sConverted)
+	IniWrite($sIniPath, "AutoIt-Idle", "Enable", GUICtrlRead($cbEnable))
+	IniWrite($sIniPath, "AutoIt-Idle", "CheckProcess", GUICtrlRead($rCheckProcess))
+	IniWrite($sIniPath, "AutoIt-Idle", "Min", GUICtrlRead($iMin))
 EndFunc   ;==>_SaveIni
 Func _Show()
 	GUISetState(@SW_SHOW)
@@ -182,9 +181,9 @@ Func cbEnableClick()
 	EndIf
 	rClick()
 EndFunc   ;==>cbEnableClick
-Func fAutoItAFKClose()
+Func fAutoItIdleClose()
 	GUISetState(@SW_HIDE)
-EndFunc   ;==>fAutoItAFKClose
+EndFunc   ;==>fAutoItIdleClose
 Func iMinChange()
 	$iScreensaverTime = GUICtrlRead($iMin) * 60 * 1000
 EndFunc   ;==>iMinChange

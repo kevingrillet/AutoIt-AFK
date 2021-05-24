@@ -23,7 +23,6 @@
 #include <File.au3>
 #include <GUIConstantsEx.au3>
 #include <GuiEdit.au3>
-#include <MsgBoxConstants.au3>
 #include <StringConstants.au3>
 #include <TabConstants.au3>
 #include <Timers.au3>
@@ -210,7 +209,6 @@ Func bRefreshClick()
 	Local $bSleep = False
 	Local $bHibernate = False
 	FileOpen($sPathTmpSystem, 0)
-	MsgBox($MB_SYSTEMMODAL, "Title", _FileCountLines($sPathTmpSystem))
 	For $i = 1 To _FileCountLines($sPathTmpSystem)
 		$sLine = FileReadLine($sPathTmpSystem, $i)
 

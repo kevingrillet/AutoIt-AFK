@@ -3,47 +3,54 @@
 #AutoIt3Wrapper_Outfile=.\Build\AutoIt_Idle.exe
 #AutoIt3Wrapper_Compression=4
 #AutoIt3Wrapper_UseUpx=y
-#AutoIt3Wrapper_Res_Description=Script to prevent Windows from going to sleep or the screensaver.
-#AutoIt3Wrapper_Res_Fileversion=1.0.0.0
+#AutoIt3Wrapper_Res_Description=Script to prevent Windows to idle.
+#AutoIt3Wrapper_Res_Fileversion=1.0.0.1
 #AutoIt3Wrapper_Res_LegalCopyright=Copyright (C) 2021
 #AutoIt3Wrapper_Res_Language=1033
 #AutoIt3Wrapper_Res_Field=Compiler Date|%date%
 #AutoIt3Wrapper_Res_Field=Compiler Heure|%time%
 #AutoIt3Wrapper_Res_Field=Compiler Version|AutoIt v%AutoItVer%
-#AutoIt3Wrapper_Res_Field=Auteur|kevingrillet
-#AutoIt3Wrapper_Add_Constants=n
+#AutoIt3Wrapper_Res_Field=Author|kevingrillet
+#AutoIt3Wrapper_Res_Field=Github|https://github.com/kevingrillet/AutoIt-Idle
+#AutoIt3Wrapper_Add_Constants=y
 #AutoIt3Wrapper_Run_Tidy=y
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
-#cs ----------------------------------------------------------------------------
-	AutoIt Version:   3.3.14.2
-	Scite Version:    3.7.3
-	Author:           kevingrillet
-	Name:             AutoIt_Idle
-	Version:          1
-	Script Function:  The purpose of this small script is to prevent Windows from going to sleep or the screensaver.
-#ce ----------------------------------------------------------------------------
-
-;~ ========== INCLUDES ==========
+; *** Start added by AutoIt3Wrapper ***
+#include <AutoItConstants.au3>
 #include <ButtonConstants.au3>
 #include <Date.au3>
 #include <EditConstants.au3>
 #include <File.au3>
 #include <GUIConstantsEx.au3>
 #include <GuiEdit.au3>
+#include <MsgBoxConstants.au3>
+#include <StringConstants.au3>
 #include <TabConstants.au3>
 #include <Timers.au3>
 #include <WindowsConstants.au3>
+#include <WinAPISys.au3>
+#include <WinAPIsysinfoConstants.au3>
+; *** End added by AutoIt3Wrapper ***
+#cs ----------------------------------------------------------------------------
+	AutoIt Version:   3.3.14.2
+	Scite Version:    3.7.3
+	Author:           kevingrillet
+	Name:             AutoIt_Idle
+	Version:          1.0.0.1
+	Script Function:  Script to prevent Windows to idle.
+#ce ----------------------------------------------------------------------------
 
 ;~ ========== VARIABLES ==========
 Local $bRunning = True
 Local $iIdleTime = 0
 Local $iScreensaverTime = 5 * 60 * 1000 ; 5 min
-Local $sIniPath = @ScriptDir & "\AutoIt_Idle.ini"
-Local $sLogPath = @ScriptDir & "\AutoIt_Idle.log"
+Local $sPathIni = @ScriptDir & "\AutoIt_Idle.ini"
+Local $sPathLog = @ScriptDir & "\AutoIt_Idle.log"
+Local $sPathTmpSystem = @ScriptDir & "\AutoIt_Idle.tmp"
 Local $sProcess = ""
 
 ;~ ========== OPT ==========
-Opt("GUIOnEventMode", 1)
+Opt("GUIOnEventMode", 1) ;0=disabled, 1=OnEvent mode enabled
 Opt("TrayAutoPause", 0) ;0=no pause, 1=Pause
 Opt("TrayMenuMode", 3) ;0=append, 1=no default menu, 2=no automatic check, 4=menuitemID  not return
 Opt("TrayOnEventMode", 1) ;0=disable, 1=enable
@@ -52,39 +59,53 @@ Opt("TrayOnEventMode", 1) ;0=disable, 1=enable
 #Region ### START Koda GUI section ### Form=.\koda\forms\form1.kxf
 $fAutoItIdle = GUICreate("AutoIt Idle", 390, 392, -1, -1, $WS_SYSMENU)
 GUISetOnEvent($GUI_EVENT_CLOSE, "fAutoItIdleClose")
-$Log = GUICtrlCreateTab(3, 3, 380, 356)
+$tAutoItIdle = GUICtrlCreateTab(3, 3, 380, 356)
 $tsOptions = GUICtrlCreateTabItem("Options")
-$cbEnable = GUICtrlCreateCheckbox("Enable", 15, 36, 97, 17)
+GUICtrlCreateLabel("Idle timer", 15, 40, 100, 17)
+$iMin = GUICtrlCreateInput("", 100, 34, 65, 21, BitOR($GUI_SS_DEFAULT_INPUT, $ES_NUMBER))
+GUICtrlSetOnEvent($iMin, "iMinChange")
+GUICtrlCreateLabel("(min)", 175, 40, 50, 17)
+$bSave = GUICtrlCreateButton("Save", 300, 36, 70, 17)
+GUICtrlSetOnEvent($bSave, "bSaveClick")
+$cbEnable = GUICtrlCreateCheckbox("Enable", 15, 65, 97, 17)
 GUICtrlSetState($cbEnable, $GUI_CHECKED)
 GUICtrlSetOnEvent($cbEnable, "cbEnableClick")
-$iMin = GUICtrlCreateInput("", 168, 34, 65, 21, BitOR($GUI_SS_DEFAULT_INPUT, $ES_NUMBER))
-GUICtrlSetOnEvent($iMin, "iMinChange")
-$bSave = GUICtrlCreateButton("Save", 295, 36, 75, 17)
-GUICtrlSetOnEvent($bSave, "bSaveClick")
-$gMode = GUICtrlCreateGroup("", 16, 56, 353, 41)
-$rAlways = GUICtrlCreateRadio("Always", 24, 72, 113, 17)
+$gMode = GUICtrlCreateGroup("", 16, 92, 353, 41)
+$rAlways = GUICtrlCreateRadio("Always", 24, 108, 113, 17)
 GUICtrlSetState($rAlways, $GUI_CHECKED)
 GUICtrlSetOnEvent($rAlways, "rClick")
-$rCheckProcess = GUICtrlCreateRadio("Check Process", 208, 72, 113, 17)
+$rCheckProcess = GUICtrlCreateRadio("Check Process", 208, 108, 113, 17)
 GUICtrlSetOnEvent($rCheckProcess, "rClick")
 GUICtrlCreateGroup("", -99, -99, 1, 1)
-$eProcess = GUICtrlCreateEdit("", 15, 100, 353, 249)
+$eProcess = GUICtrlCreateEdit("", 15, 136, 353, 213)
 $tsLog = GUICtrlCreateTabItem("Log")
-$eLog = GUICtrlCreateEdit("", 15, 36, 353, 313)
+$cbLog = GUICtrlCreateCheckbox("Save log", 15, 36, 97, 17)
+$eLog = GUICtrlCreateEdit("", 15, 72, 353, 277)
+GUICtrlCreateTabItem("System")
+GUICtrlCreateLabel("Screensaver", 15, 36, 100, 17)
+$iScreensaver = GUICtrlCreateInput("0", 150, 34, 65, 21, BitOR($GUI_SS_DEFAULT_INPUT, $ES_NUMBER))
+GUICtrlSetState($iScreensaver, $GUI_DISABLE)
+GUICtrlCreateLabel("Sleep", 15, 72, 100, 17)
+$iSleep = GUICtrlCreateInput("0", 150, 70, 65, 21, BitOR($GUI_SS_DEFAULT_INPUT, $ES_NUMBER))
+GUICtrlSetState($iSleep, $GUI_DISABLE)
+GUICtrlCreateLabel("Hibernate", 15, 108, 100, 17)
+$iHibernate = GUICtrlCreateInput("0", 150, 106, 65, 21, BitOR($GUI_SS_DEFAULT_INPUT, $ES_NUMBER))
+GUICtrlSetState($iHibernate, $GUI_DISABLE)
+$bRefresh = GUICtrlCreateButton("Refresh", 15, 332, 353, 17)
+GUICtrlSetOnEvent($bRefresh, "bRefreshClick")
 GUICtrlCreateTabItem("")
 $miShow = TrayCreateItem("Show AutoIt Idle")
-TrayItemSetOnEvent($miShow, "_Show")
+TrayItemSetOnEvent($miShow, "__Show")
 $miShutDown = TrayCreateItem("Shut Down AutoIt Idle")
-TrayItemSetOnEvent($miShutDown, "_Exit")
+TrayItemSetOnEvent($miShutDown, "__Exit")
 TraySetToolTip("AutoIt Idle")
-;~ GUISetState(@SW_SHOW)
 #EndRegion ### END Koda GUI section ###
 
 ;~ ========== MAINLOOP ==========
-_Log(" Starting")
-_LoadIni()
-If Not FileExists($sIniPath) Then
-	_Show()
+__Log("Starting")
+__LoadIni()
+If Not FileExists($sPathIni) Then
+	__Show()
 EndIf
 
 While 1
@@ -98,12 +119,13 @@ While 1
 		; If _idle_time + 10s > screensaver_time
 		If $bRunning And $iIdleTime > $iScreensaverTime Then
 			If GUICtrlRead($rCheckProcess) = $GUI_CHECKED Then
-				; If process is running
+				; Stop the ctrls if process is not found, to avoid infinite check ProcessExists
 				$bRunning = False
+				; If process is running (loop edit lines)
 				For $iLine = 0 To _GUICtrlEdit_GetLineCount($eProcess)
 					$sProcess = _GUICtrlEdit_GetLine($eProcess, $iLine)
 					If ProcessExists($sProcess) Then
-						_Log(" Run [" & $sProcess & "]")
+						__Log("Run [" & $sProcess & "]")
 						; Send ver num 2 times
 						Send("{NUMLOCK}")
 						Send("{NUMLOCK}")
@@ -112,7 +134,7 @@ While 1
 					EndIf
 				Next
 			Else
-				_Log(" Run")
+				__Log("Run")
 				; Send ver num 2 times
 				Send("{NUMLOCK}")
 				Send("{NUMLOCK}")
@@ -122,56 +144,107 @@ While 1
 WEnd
 
 ;~ ========== FUNC ==========
-Func _Exit()
-	_SaveIni()
-	_Log(" Exiting")
+Func __Exit()
+	__SaveIni()
+	__Log("Exiting")
 	Exit
-EndFunc   ;==>_Exit
-Func _LoadIni()
-	_Log(" LoadIni")
-	GUICtrlSetData($iMin, IniRead($sIniPath, "AutoIt_Idle", "Min", 5))
+EndFunc   ;==>__Exit
+Func __LoadIni()
+	__Log("LoadIni")
+	GUICtrlSetData($iMin, IniRead($sPathIni, "AutoIt_Idle", "Min", 5))
 	iMinChange()
-	GUICtrlSetState($cbEnable, IniRead($sIniPath, "AutoIt_Idle", "Enable", $GUI_CHECKED))
+	GUICtrlSetState($cbEnable, IniRead($sPathIni, "AutoIt_Idle", "Enable", $GUI_CHECKED))
 	cbEnableClick()
-	GUICtrlSetState($rCheckProcess, IniRead($sIniPath, "AutoIt_Idle", "CheckProcess", $GUI_UNCHECKED))
+	GUICtrlSetState($rCheckProcess, IniRead($sPathIni, "AutoIt_Idle", "CheckProcess", $GUI_UNCHECKED))
 	rClick()
-	$sOriginal = IniRead($sIniPath, "AutoIt_Idle", "Process", "")
+	GUICtrlSetState($cbLog, IniRead($sPathIni, "AutoIt_Idle", "Log", $GUI_UNCHECKED))
 	; Read the string from the ini
-	$sOriginal = IniRead($sIniPath, "AutoIt_Idle", "Process", "")
+	$sOriginal = IniRead($sPathIni, "AutoIt_Idle", "Process", "")
 	; Convert the dummies back into EOLs
 	$sConverted = StringReplace($sOriginal, "{ENTER}", @CRLF)
-	; Which we replace in the edit
+	; Which we place in the edit
 	GUICtrlSetData($eProcess, $sConverted)
-EndFunc   ;==>_LoadIni
-Func _Log($sToLog)
-	_GUICtrlEdit_InsertText($eLog, _NowCalc() & $sToLog & @CRLF)
-	_FileWriteLog($sLogPath, $sToLog & @CRLF)
-EndFunc   ;==>_Log
-Func _SaveIni()
-	_Log(" SaveIni")
+EndFunc   ;==>__LoadIni
+Func __Log($sToLog)
+	_GUICtrlEdit_InsertText($eLog, _NowCalc() & " : " & $sToLog & @CRLF)
+	If GUICtrlRead($cbLog) = $GUI_CHECKED Then
+		_FileWriteLog($sPathLog, $sToLog & @CRLF)
+	EndIf
+EndFunc   ;==>__Log
+Func __SaveIni()
+	__Log("SaveIni")
 	; Read multiple lines
 	$sOriginal = GUICtrlRead($eProcess)
 	; Convert EOLs into dummy strings
 	$sConverted = StringReplace($sOriginal, @CRLF, "{ENTER}")
 	; Which is written to the ini
-	IniWrite($sIniPath, "AutoIt_Idle", "Process", $sConverted)
-	IniWrite($sIniPath, "AutoIt_Idle", "Enable", GUICtrlRead($cbEnable))
-	IniWrite($sIniPath, "AutoIt_Idle", "CheckProcess", GUICtrlRead($rCheckProcess))
-	IniWrite($sIniPath, "AutoIt_Idle", "Min", GUICtrlRead($iMin))
-EndFunc   ;==>_SaveIni
-Func _Show()
+	IniWrite($sPathIni, "AutoIt_Idle", "Process", $sConverted)
+	IniWrite($sPathIni, "AutoIt_Idle", "Enable", GUICtrlRead($cbEnable))
+	IniWrite($sPathIni, "AutoIt_Idle", "CheckProcess", GUICtrlRead($rCheckProcess))
+	IniWrite($sPathIni, "AutoIt_Idle", "Min", GUICtrlRead($iMin))
+	IniWrite($sPathIni, "AutoIt_Idle", "Log", GUICtrlRead($cbLog))
+EndFunc   ;==>__SaveIni
+Func __Show()
 	GUISetState(@SW_SHOW)
-EndFunc   ;==>_Show
-Func bSaveClick()
-	_SaveIni()
-EndFunc   ;==>bSaveClick
-Func rClick()
-	If GUICtrlRead($rCheckProcess) = $GUI_CHECKED Then
-		GUICtrlSetState($eProcess, $GUI_ENABLE)
-	Else
-		GUICtrlSetState($eProcess, $GUI_DISABLE)
+EndFunc   ;==>__Show
+Func bRefreshClick()
+	__Log("Refresh System")
+	; Screensaver
+	Local $sOutput = ""
+	_WinAPI_SystemParametersInfo($SPI_GETSCREENSAVETIMEOUT, 0, $sOutput)
+	If $sOutput = "" Then
+		$sOutput = "0"
 	EndIf
-EndFunc   ;==>rClick
+	GUICtrlSetData($iScreensaver, $sOutput)
+
+	$iPID = Run("powercfg /Q SCHEME_CURRENT", "", @SW_HIDE, $STDOUT_CHILD)
+	$sOutput = ""
+	While 1
+		$sOutput = StdoutRead($iPID)
+		If @error Then ExitLoop ; Exit the loop if the process closes or StdoutRead returns an error.
+		FileWrite($sPathTmpSystem, $sOutput)
+	WEnd
+
+	Local $aTmp
+	Local $iTmp = 0
+	Local $bSleep = False
+	Local $bHibernate = False
+	FileOpen($sPathTmpSystem, 0)
+	MsgBox($MB_SYSTEMMODAL, "Title", _FileCountLines($sPathTmpSystem))
+	For $i = 1 To _FileCountLines($sPathTmpSystem)
+		$sLine = FileReadLine($sPathTmpSystem, $i)
+
+		; Line 0		Power Setting GUID
+		; Line 1		STANDBYIDLE // HIBERNATEIDLE
+		If StringRegExp($sLine, "\bSTANDBYIDLE\b") = 1 Then
+			$bSleep = True
+			$iTmp = 0
+		ElseIf StringRegExp($sLine, "\bHIBERNATEIDLE\b") = 1 Then
+			$bHibernate = True
+			$iTmp = 0
+		EndIf
+		; Line 6		Current AC Power Setting Index: 0x00000000
+		; Line 7		Current DC Power Setting Index: 0x00000000
+		If $bSleep Or $bHibernate Then
+			If $iTmp = 6 Then
+				$aTmp = StringRegExp($sLine, "\b0x(\d*)\b", $STR_REGEXPARRAYMATCH)
+				If $bSleep Then
+					$bSleep = False
+					GUICtrlSetData($iSleep, Dec($aTmp[0]) / 60)
+				ElseIf $bHibernate Then
+					$bHibernate = False
+					GUICtrlSetData($iHibernate, Dec($aTmp[0]) / 60)
+				EndIf
+			EndIf
+			$iTmp += 1
+		EndIf
+	Next
+	FileClose($sPathTmpSystem)
+	FileDelete($sPathTmpSystem)
+EndFunc   ;==>bRefreshClick
+Func bSaveClick()
+	__SaveIni()
+EndFunc   ;==>bSaveClick
 Func cbEnableClick()
 	If GUICtrlRead($cbEnable) = $GUI_CHECKED Then
 		GUICtrlSetState($rCheckProcess, $GUI_ENABLE)
@@ -187,3 +260,10 @@ EndFunc   ;==>fAutoItIdleClose
 Func iMinChange()
 	$iScreensaverTime = GUICtrlRead($iMin) * 60 * 1000
 EndFunc   ;==>iMinChange
+Func rClick()
+	If GUICtrlRead($rCheckProcess) = $GUI_CHECKED Then
+		GUICtrlSetState($eProcess, $GUI_ENABLE)
+	Else
+		GUICtrlSetState($eProcess, $GUI_DISABLE)
+	EndIf
+EndFunc   ;==>rClick

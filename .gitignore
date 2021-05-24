@@ -4,6 +4,7 @@ Build
 Koda
 AutoIt_Idle.ini
 AutoIt_Idle.log
+AutoIt_Idle.tmp
 
 # https://github.com/github/gitignore/blob/master/Global/VisualStudioCode.gitignore
 .vscode/*

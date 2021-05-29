@@ -1,10 +1,19 @@
+#cs ----------------------------------------------------------------------------
+	AutoIt Version:   3.3.14.2
+	Scite Version:    3.7.3
+	Author:           kevingrillet
+	Name:             AutoIt_Idle
+	Version:          1.0.0.2
+	Script Function:  Script to prevent Windows to idle.
+#ce ----------------------------------------------------------------------------
+
 #Region ;**** Directives created by AutoIt3Wrapper_GUI ****
 #AutoIt3Wrapper_Icon=AutoIt_Idle.ico
-#AutoIt3Wrapper_Outfile=.\Build\AutoIt_Idle.exe
+#AutoIt3Wrapper_Outfile=Build\AutoIt_Idle.exe
 #AutoIt3Wrapper_Compression=4
 #AutoIt3Wrapper_UseUpx=y
 #AutoIt3Wrapper_Res_Description=Script to prevent Windows to idle.
-#AutoIt3Wrapper_Res_Fileversion=1.0.0.1
+#AutoIt3Wrapper_Res_Fileversion=1.0.0.2
 #AutoIt3Wrapper_Res_LegalCopyright=Copyright (C) 2021
 #AutoIt3Wrapper_Res_Language=1033
 #AutoIt3Wrapper_Res_Field=Compiler Date|%date%
@@ -12,9 +21,11 @@
 #AutoIt3Wrapper_Res_Field=Compiler Version|AutoIt v%AutoItVer%
 #AutoIt3Wrapper_Res_Field=Author|kevingrillet
 #AutoIt3Wrapper_Res_Field=Github|https://github.com/kevingrillet/AutoIt-Idle
-#AutoIt3Wrapper_Add_Constants=y
+#AutoIt3Wrapper_Add_Constants=n
 #AutoIt3Wrapper_Run_Tidy=y
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
+
+#Region ### START INCLUDES ###
 ; *** Start added by AutoIt3Wrapper ***
 #include <AutoItConstants.au3>
 #include <ButtonConstants.au3>
@@ -26,20 +37,14 @@
 #include <StringConstants.au3>
 #include <TabConstants.au3>
 #include <Timers.au3>
+#include <TrayConstants.au3>
 #include <WindowsConstants.au3>
 #include <WinAPISys.au3>
 #include <WinAPIsysinfoConstants.au3>
 ; *** End added by AutoIt3Wrapper ***
-#cs ----------------------------------------------------------------------------
-	AutoIt Version:   3.3.14.2
-	Scite Version:    3.7.3
-	Author:           kevingrillet
-	Name:             AutoIt_Idle
-	Version:          1.0.0.1
-	Script Function:  Script to prevent Windows to idle.
-#ce ----------------------------------------------------------------------------
+#EndRegion ### START INCLUDES ###
 
-;~ ========== VARIABLES ==========
+#Region ### START VARIABLES ###
 Local $bRunning = True
 Local $iIdleTime = 0
 Local $iScreensaverTime = 5 * 60 * 1000 ; 5 min
@@ -47,23 +52,23 @@ Local $sPathIni = @ScriptDir & "\AutoIt_Idle.ini"
 Local $sPathLog = @ScriptDir & "\AutoIt_Idle.log"
 Local $sPathTmpSystem = @ScriptDir & "\AutoIt_Idle.tmp"
 Local $sProcess = ""
+#EndRegion ### START VARIABLES ###
 
-;~ ========== OPT ==========
+#Region ### START OPT ###
 Opt("GUIOnEventMode", 1) ;0=disabled, 1=OnEvent mode enabled
 Opt("TrayAutoPause", 0) ;0=no pause, 1=Pause
 Opt("TrayMenuMode", 3) ;0=append, 1=no default menu, 2=no automatic check, 4=menuitemID  not return
 Opt("TrayOnEventMode", 1) ;0=disable, 1=enable
+#EndRegion ### START OPT ###
 
-;~ ========== GUI ==========
 #Region ### START Koda GUI section ### Form=.\koda\forms\form1.kxf
 $fAutoItIdle = GUICreate("AutoIt Idle", 390, 392, -1, -1, $WS_SYSMENU)
 GUISetOnEvent($GUI_EVENT_CLOSE, "fAutoItIdleClose")
 $tAutoItIdle = GUICtrlCreateTab(3, 3, 380, 356)
 $tsOptions = GUICtrlCreateTabItem("Options")
-GUICtrlCreateLabel("Idle timer", 15, 40, 100, 17)
-$iMin = GUICtrlCreateInput("", 100, 34, 65, 21, BitOR($GUI_SS_DEFAULT_INPUT, $ES_NUMBER))
+GUICtrlCreateLabel("Idle timer (min)", 15, 40, 100, 17)
+$iMin = GUICtrlCreateInput("", 100, 34, 65, 21, BitOR($GUI_SS_DEFAULT_INPUT, $ES_RIGHT, $ES_NUMBER))
 GUICtrlSetOnEvent($iMin, "iMinChange")
-GUICtrlCreateLabel("(min)", 175, 40, 50, 17)
 $bSave = GUICtrlCreateButton("Save", 300, 36, 70, 17)
 GUICtrlSetOnEvent($bSave, "bSaveClick")
 $cbEnable = GUICtrlCreateCheckbox("Enable", 15, 65, 97, 17)
@@ -81,14 +86,14 @@ $tsLog = GUICtrlCreateTabItem("Log")
 $cbLog = GUICtrlCreateCheckbox("Save log", 15, 36, 97, 17)
 $eLog = GUICtrlCreateEdit("", 15, 72, 353, 277)
 GUICtrlCreateTabItem("System")
-GUICtrlCreateLabel("Screensaver", 15, 36, 100, 17)
-$iScreensaver = GUICtrlCreateInput("0", 150, 34, 65, 21, BitOR($GUI_SS_DEFAULT_INPUT, $ES_NUMBER))
+GUICtrlCreateLabel("Screensaver (min)", 15, 36, 100, 17)
+$iScreensaver = GUICtrlCreateInput("0", 150, 34, 65, 21, BitOR($GUI_SS_DEFAULT_INPUT, $ES_RIGHT, $ES_NUMBER))
 GUICtrlSetState($iScreensaver, $GUI_DISABLE)
-GUICtrlCreateLabel("Sleep", 15, 72, 100, 17)
-$iSleep = GUICtrlCreateInput("0", 150, 70, 65, 21, BitOR($GUI_SS_DEFAULT_INPUT, $ES_NUMBER))
+GUICtrlCreateLabel("Sleep (min)", 15, 72, 100, 17)
+$iSleep = GUICtrlCreateInput("0", 150, 70, 65, 21, BitOR($GUI_SS_DEFAULT_INPUT, $ES_RIGHT, $ES_NUMBER))
 GUICtrlSetState($iSleep, $GUI_DISABLE)
-GUICtrlCreateLabel("Hibernate", 15, 108, 100, 17)
-$iHibernate = GUICtrlCreateInput("0", 150, 106, 65, 21, BitOR($GUI_SS_DEFAULT_INPUT, $ES_NUMBER))
+GUICtrlCreateLabel("Hibernate (min)", 15, 108, 100, 17)
+$iHibernate = GUICtrlCreateInput("0", 150, 106, 65, 21, BitOR($GUI_SS_DEFAULT_INPUT, $ES_RIGHT, $ES_NUMBER))
 GUICtrlSetState($iHibernate, $GUI_DISABLE)
 $bRefresh = GUICtrlCreateButton("Refresh", 15, 332, 353, 17)
 GUICtrlSetOnEvent($bRefresh, "bRefreshClick")
@@ -97,6 +102,7 @@ $miShow = TrayCreateItem("Show AutoIt Idle")
 TrayItemSetOnEvent($miShow, "__Show")
 $miShutDown = TrayCreateItem("Shut Down AutoIt Idle")
 TrayItemSetOnEvent($miShutDown, "__Exit")
+TraySetOnEvent($TRAY_EVENT_PRIMARYDOUBLE, "__Show")
 TraySetToolTip("AutoIt Idle")
 #EndRegion ### END Koda GUI section ###
 
@@ -186,6 +192,7 @@ EndFunc   ;==>__SaveIni
 Func __Show()
 	GUISetState(@SW_SHOW)
 EndFunc   ;==>__Show
+
 Func bRefreshClick()
 	__Log("Refresh System")
 	; Screensaver

@@ -10,3 +10,5 @@ The purpose of this small script is to prevent Windows to idle.
 
 - At first it will click on the `ver. num` key twice after a set time (ex: 5 minutes).
 - In a second time it will do this action only if a certain process is active (ex: Bluestacks.exe).
+
+![AutoIt_Idle_2021-06-02_20-19_TnQdC](https://user-images.githubusercontent.com/7203617/120532324-deeb0680-c3df-11eb-85ea-1fcd00f55e56.png)

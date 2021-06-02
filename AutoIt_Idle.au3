@@ -9,7 +9,7 @@
 
 #Region ;**** Directives created by AutoIt3Wrapper_GUI ****
 #AutoIt3Wrapper_Icon=AutoIt_Idle.ico
-#AutoIt3Wrapper_Outfile=Build\AutoIt_Idle.exe
+#AutoIt3Wrapper_Outfile=AutoIt_Idle.exe
 #AutoIt3Wrapper_Compression=4
 #AutoIt3Wrapper_UseUpx=y
 #AutoIt3Wrapper_Res_Description=Script to prevent Windows to idle.
@@ -68,6 +68,7 @@ $tAutoItIdle = GUICtrlCreateTab(3, 3, 380, 356)
 $tsOptions = GUICtrlCreateTabItem("Options")
 GUICtrlCreateLabel("Idle timer (min)", 15, 40, 100, 17)
 $iMin = GUICtrlCreateInput("", 100, 34, 65, 21, BitOR($GUI_SS_DEFAULT_INPUT, $ES_RIGHT, $ES_NUMBER))
+GUICtrlSetTip(-1, "Will wake up 10s before this idle time")
 GUICtrlSetOnEvent($iMin, "iMinChange")
 $bSave = GUICtrlCreateButton("Save", 300, 36, 70, 17)
 GUICtrlSetOnEvent($bSave, "bSaveClick")

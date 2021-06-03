@@ -47,6 +47,7 @@
 #Region ### START VARIABLES ###
 Local $bRunning = True
 Local $iIdleTime = 0
+Local $iIdleTimeOld = 0
 Local $iScreensaverTime = 5 * 60 * 1000 ; 5 min
 Local $sPathIni = @ScriptDir & "\AutoIt_Idle.ini"
 Local $sPathLog = @ScriptDir & "\AutoIt_Idle.log"
@@ -56,52 +57,53 @@ Local $sProcess = ""
 
 #Region ### START OPT ###
 Opt("GUIOnEventMode", 1) ;0=disabled, 1=OnEvent mode enabled
+Opt("MustDeclareVars", 1) ;0=no, 1=require pre-declaration
 Opt("TrayAutoPause", 0) ;0=no pause, 1=Pause
 Opt("TrayMenuMode", 3) ;0=append, 1=no default menu, 2=no automatic check, 4=menuitemID  not return
 Opt("TrayOnEventMode", 1) ;0=disable, 1=enable
 #EndRegion ### START OPT ###
 
 #Region ### START Koda GUI section ### Form=.\koda\forms\form1.kxf
-$fAutoItIdle = GUICreate("AutoIt Idle", 390, 392, -1, -1, $WS_SYSMENU)
+Local $fAutoItIdle = GUICreate("AutoIt Idle", 390, 392, -1, -1, $WS_SYSMENU)
 GUISetOnEvent($GUI_EVENT_CLOSE, "fAutoItIdleClose")
-$tAutoItIdle = GUICtrlCreateTab(3, 3, 380, 356)
-$tsOptions = GUICtrlCreateTabItem("Options")
+Local $tAutoItIdle = GUICtrlCreateTab(3, 3, 380, 356)
+Local $tsOptions = GUICtrlCreateTabItem("Options")
 GUICtrlCreateLabel("Idle timer (min)", 15, 40, 100, 17)
-$iMin = GUICtrlCreateInput("", 100, 34, 65, 21, BitOR($GUI_SS_DEFAULT_INPUT, $ES_RIGHT, $ES_NUMBER))
+Local $iMin = GUICtrlCreateInput("", 100, 34, 65, 21, BitOR($GUI_SS_DEFAULT_INPUT, $ES_RIGHT, $ES_NUMBER))
 GUICtrlSetTip(-1, "Will wake up 10s before this idle time")
 GUICtrlSetOnEvent($iMin, "iMinChange")
-$bSave = GUICtrlCreateButton("Save", 300, 36, 70, 17)
+Local $bSave = GUICtrlCreateButton("Save", 300, 36, 70, 17)
 GUICtrlSetOnEvent($bSave, "bSaveClick")
-$cbEnable = GUICtrlCreateCheckbox("Enable", 15, 65, 97, 17)
+Local $cbEnable = GUICtrlCreateCheckbox("Enable", 15, 65, 97, 17)
 GUICtrlSetState($cbEnable, $GUI_CHECKED)
 GUICtrlSetOnEvent($cbEnable, "cbEnableClick")
-$gMode = GUICtrlCreateGroup("", 16, 92, 353, 41)
-$rAlways = GUICtrlCreateRadio("Always", 24, 108, 113, 17)
+Local $gMode = GUICtrlCreateGroup("", 16, 92, 353, 41)
+Local $rAlways = GUICtrlCreateRadio("Always", 24, 108, 113, 17)
 GUICtrlSetState($rAlways, $GUI_CHECKED)
 GUICtrlSetOnEvent($rAlways, "rClick")
-$rCheckProcess = GUICtrlCreateRadio("Check Process", 208, 108, 113, 17)
+Local $rCheckProcess = GUICtrlCreateRadio("Check Process", 208, 108, 113, 17)
 GUICtrlSetOnEvent($rCheckProcess, "rClick")
 GUICtrlCreateGroup("", -99, -99, 1, 1)
-$eProcess = GUICtrlCreateEdit("", 15, 136, 353, 213)
-$tsLog = GUICtrlCreateTabItem("Log")
-$cbLog = GUICtrlCreateCheckbox("Save log", 15, 36, 97, 17)
-$eLog = GUICtrlCreateEdit("", 15, 72, 353, 277)
+Local $eProcess = GUICtrlCreateEdit("", 15, 136, 353, 213)
+Local $tsLog = GUICtrlCreateTabItem("Log")
+Local $cbLog = GUICtrlCreateCheckbox("Save log", 15, 36, 97, 17)
+Local $eLog = GUICtrlCreateEdit("", 15, 72, 353, 277)
 GUICtrlCreateTabItem("System")
 GUICtrlCreateLabel("Screensaver (min)", 15, 36, 100, 17)
-$iScreensaver = GUICtrlCreateInput("0", 150, 34, 65, 21, BitOR($GUI_SS_DEFAULT_INPUT, $ES_RIGHT, $ES_NUMBER))
+Local $iScreensaver = GUICtrlCreateInput("0", 150, 34, 65, 21, BitOR($GUI_SS_DEFAULT_INPUT, $ES_RIGHT, $ES_NUMBER))
 GUICtrlSetState($iScreensaver, $GUI_DISABLE)
 GUICtrlCreateLabel("Sleep (min)", 15, 72, 100, 17)
-$iSleep = GUICtrlCreateInput("0", 150, 70, 65, 21, BitOR($GUI_SS_DEFAULT_INPUT, $ES_RIGHT, $ES_NUMBER))
+Local $iSleep = GUICtrlCreateInput("0", 150, 70, 65, 21, BitOR($GUI_SS_DEFAULT_INPUT, $ES_RIGHT, $ES_NUMBER))
 GUICtrlSetState($iSleep, $GUI_DISABLE)
 GUICtrlCreateLabel("Hibernate (min)", 15, 108, 100, 17)
-$iHibernate = GUICtrlCreateInput("0", 150, 106, 65, 21, BitOR($GUI_SS_DEFAULT_INPUT, $ES_RIGHT, $ES_NUMBER))
+Local $iHibernate = GUICtrlCreateInput("0", 150, 106, 65, 21, BitOR($GUI_SS_DEFAULT_INPUT, $ES_RIGHT, $ES_NUMBER))
 GUICtrlSetState($iHibernate, $GUI_DISABLE)
-$bRefresh = GUICtrlCreateButton("Refresh", 15, 332, 353, 17)
+Local $bRefresh = GUICtrlCreateButton("Refresh", 15, 332, 353, 17)
 GUICtrlSetOnEvent($bRefresh, "bRefreshClick")
 GUICtrlCreateTabItem("")
-$miShow = TrayCreateItem("Show AutoIt Idle")
+Local $miShow = TrayCreateItem("Show AutoIt Idle")
 TrayItemSetOnEvent($miShow, "__Show")
-$miShutDown = TrayCreateItem("Shut Down AutoIt Idle")
+Local $miShutDown = TrayCreateItem("Shut Down AutoIt Idle")
 TrayItemSetOnEvent($miShutDown, "__Exit")
 TraySetOnEvent($TRAY_EVENT_PRIMARYDOUBLE, "__Show")
 TraySetToolTip("AutoIt Idle")
@@ -165,9 +167,9 @@ Func __LoadIni()
 	rClick()
 	GUICtrlSetState($cbLog, IniRead($sPathIni, "AutoIt_Idle", "Log", $GUI_UNCHECKED))
 	; Read the string from the ini
-	$sOriginal = IniRead($sPathIni, "AutoIt_Idle", "Process", "")
+	Local $sOriginal = IniRead($sPathIni, "AutoIt_Idle", "Process", "")
 	; Convert the dummies back into EOLs
-	$sConverted = StringReplace($sOriginal, "{ENTER}", @CRLF)
+	Local $sConverted = StringReplace($sOriginal, "{ENTER}", @CRLF)
 	; Which we place in the edit
 	GUICtrlSetData($eProcess, $sConverted)
 EndFunc   ;==>__LoadIni
@@ -180,9 +182,9 @@ EndFunc   ;==>__Log
 Func __SaveIni()
 	__Log("SaveIni")
 	; Read multiple lines
-	$sOriginal = GUICtrlRead($eProcess)
+	Local $sOriginal = GUICtrlRead($eProcess)
 	; Convert EOLs into dummy strings
-	$sConverted = StringReplace($sOriginal, @CRLF, "{ENTER}")
+	Local $sConverted = StringReplace($sOriginal, @CRLF, "{ENTER}")
 	; Which is written to the ini
 	IniWrite($sPathIni, "AutoIt_Idle", "Process", $sConverted)
 	IniWrite($sPathIni, "AutoIt_Idle", "Enable", GUICtrlRead($cbEnable))
@@ -204,7 +206,7 @@ Func bRefreshClick()
 	EndIf
 	GUICtrlSetData($iScreensaver, $sOutput)
 
-	$iPID = Run("powercfg /Q SCHEME_CURRENT", "", @SW_HIDE, $STDOUT_CHILD)
+	Local $iPID = Run("powercfg /Q SCHEME_CURRENT", "", @SW_HIDE, $STDOUT_CHILD)
 	$sOutput = ""
 	While 1
 		$sOutput = StdoutRead($iPID)
@@ -216,6 +218,7 @@ Func bRefreshClick()
 	Local $iTmp = 0
 	Local $bSleep = False
 	Local $bHibernate = False
+	Local $sLine = ""
 	FileOpen($sPathTmpSystem, 0)
 	For $i = 1 To _FileCountLines($sPathTmpSystem)
 		$sLine = FileReadLine($sPathTmpSystem, $i)

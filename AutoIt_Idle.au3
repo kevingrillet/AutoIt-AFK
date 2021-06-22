@@ -90,14 +90,18 @@ Local $cbLog = GUICtrlCreateCheckbox("Save log", 15, 36, 97, 17)
 Local $eLog = GUICtrlCreateEdit("", 15, 72, 353, 277)
 GUICtrlCreateTabItem("System")
 GUICtrlCreateLabel("Screensaver (min)", 15, 36, 100, 17)
-Local $iScreensaver = GUICtrlCreateInput("0", 150, 34, 65, 21, BitOR($GUI_SS_DEFAULT_INPUT, $ES_RIGHT, $ES_NUMBER))
+Local $iScreensaver = GUICtrlCreateInput("0", 150, 34, 50, 21, BitOR($GUI_SS_DEFAULT_INPUT, $ES_RIGHT, $ES_NUMBER))
 GUICtrlSetState($iScreensaver, $GUI_DISABLE)
 GUICtrlCreateLabel("Sleep (min)", 15, 72, 100, 17)
-Local $iSleep = GUICtrlCreateInput("0", 150, 70, 65, 21, BitOR($GUI_SS_DEFAULT_INPUT, $ES_RIGHT, $ES_NUMBER))
-GUICtrlSetState($iSleep, $GUI_DISABLE)
+Local $iSleepAC = GUICtrlCreateInput("0", 150, 70, 50, 21, BitOR($GUI_SS_DEFAULT_INPUT, $ES_RIGHT, $ES_NUMBER))
+GUICtrlSetState(-1, $GUI_DISABLE)
+Local $iSleepDC = GUICtrlCreateInput("0", 215, 70, 50, 21, BitOR($GUI_SS_DEFAULT_INPUT, $ES_RIGHT, $ES_NUMBER))
+GUICtrlSetState(-1, $GUI_DISABLE)
 GUICtrlCreateLabel("Hibernate (min)", 15, 108, 100, 17)
-Local $iHibernate = GUICtrlCreateInput("0", 150, 106, 65, 21, BitOR($GUI_SS_DEFAULT_INPUT, $ES_RIGHT, $ES_NUMBER))
-GUICtrlSetState($iHibernate, $GUI_DISABLE)
+Local $iHibernateAC = GUICtrlCreateInput("0", 150, 106, 50, 21, BitOR($GUI_SS_DEFAULT_INPUT, $ES_RIGHT, $ES_NUMBER))
+GUICtrlSetState(-1, $GUI_DISABLE)
+Local $iHibernateDC = GUICtrlCreateInput("0", 215, 106, 50, 21, BitOR($GUI_SS_DEFAULT_INPUT, $ES_RIGHT, $ES_NUMBER))
+GUICtrlSetState(-1, $GUI_DISABLE)
 Local $bRefresh = GUICtrlCreateButton("Refresh", 15, 332, 353, 17)
 GUICtrlSetOnEvent($bRefresh, "bRefreshClick")
 GUICtrlCreateTabItem("")
@@ -216,34 +220,44 @@ Func bRefreshClick()
 
 	Local $aTmp
 	Local $iTmp = 0
-	Local $bSleep = False
-	Local $bHibernate = False
+	Local $bSUB_SLEEP = False
+	Local $bSUB_VIDEO = False
 	Local $sLine = ""
 	FileOpen($sPathTmpSystem, 0)
 	For $i = 1 To _FileCountLines($sPathTmpSystem)
 		$sLine = FileReadLine($sPathTmpSystem, $i)
 
 		; Line 0		Power Setting GUID
-		; Line 1		STANDBYIDLE // HIBERNATEIDLE
-		If StringRegExp($sLine, "\bSTANDBYIDLE\b") = 1 Then
-			$bSleep = True
+		; Line 1		SUB_VIDEO // SUB_SLEEP
+		If StringRegExp($sLine, "\bSUB_VIDEO\b") = 1 Then
+			$bSUB_VIDEO = True
 			$iTmp = 0
-		ElseIf StringRegExp($sLine, "\bHIBERNATEIDLE\b") = 1 Then
-			$bHibernate = True
+		ElseIf StringRegExp($sLine, "\bSUB_SLEEP\b") = 1 Then
+			$bSUB_SLEEP = True
 			$iTmp = 0
 		EndIf
-		; Line 6		Current AC Power Setting Index: 0x00000000
-		; Line 7		Current DC Power Setting Index: 0x00000000
-		If $bSleep Or $bHibernate Then
-			If $iTmp = 6 Then
-				$aTmp = StringRegExp($sLine, "\b0x(\d*)\b", $STR_REGEXPARRAYMATCH)
-				If $bSleep Then
-					$bSleep = False
-					GUICtrlSetData($iSleep, Dec($aTmp[0]) / 60)
-				ElseIf $bHibernate Then
-					$bHibernate = False
-					GUICtrlSetData($iHibernate, Dec($aTmp[0]) / 60)
-				EndIf
+		; Line 7		Current AC Power Setting Index: 0x00000000
+		; Line 8		Current DC Power Setting Index: 0x00000000
+		If $bSUB_SLEEP Then
+;~ 			ConsoleWrite("> " & $iTmp & " : " & $sLine & @CRLF)
+			If $iTmp = 7 Then
+				$aTmp = StringRegExp($sLine, "\b0x(\w*)\b", $STR_REGEXPARRAYMATCH)
+				GUICtrlSetData($iHibernateAC, Dec($aTmp[0]) / 60)
+			ElseIf $iTmp = 8 Then
+				$aTmp = StringRegExp($sLine, "\b0x(\w*)\b", $STR_REGEXPARRAYMATCH)
+				GUICtrlSetData($iHibernateDC, Dec($aTmp[0]) / 60)
+				$bSUB_SLEEP = False
+			EndIf
+			$iTmp += 1
+		ElseIf $bSUB_VIDEO Then
+;~ 			ConsoleWrite("> " & $iTmp & " : " & $sLine & @CRLF)
+			If $iTmp = 7 Then
+				$aTmp = StringRegExp($sLine, "\b0x(\w*)\b", $STR_REGEXPARRAYMATCH)
+				GUICtrlSetData($iSleepAC, Dec($aTmp[0]) / 60)
+			ElseIf $iTmp = 8 Then
+				$aTmp = StringRegExp($sLine, "\b0x(\w*)\b", $STR_REGEXPARRAYMATCH)
+				GUICtrlSetData($iSleepDC, Dec($aTmp[0]) / 60)
+				$bSUB_VIDEO = False
 			EndIf
 			$iTmp += 1
 		EndIf

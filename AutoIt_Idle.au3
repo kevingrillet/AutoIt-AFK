@@ -130,26 +130,31 @@ While 1
 		EndIf
 		; If _idle_time + 10s > screensaver_time
 		If $bRunning And $iIdleTime > $iScreensaverTime Then
-			If GUICtrlRead($rCheckProcess) = $GUI_CHECKED Then
-				; Stop the ctrls if process is not found, to avoid infinite check ProcessExists
+			; Stop the check if pc is locked
+			If __IsWorkstationLocked() = 0 Then
 				$bRunning = False
-				; If process is running (loop edit lines)
-				For $iLine = 0 To _GUICtrlEdit_GetLineCount($eProcess)
-					$sProcess = _GUICtrlEdit_GetLine($eProcess, $iLine)
-					If ProcessExists($sProcess) Then
-						__Log("Run [" & $sProcess & "]")
-						; Send ver num 2 times
-						Send("{NUMLOCK}")
-						Send("{NUMLOCK}")
-						$bRunning = True
-						ExitLoop
-					EndIf
-				Next
 			Else
-				__Log("Run")
-				; Send ver num 2 times
-				Send("{NUMLOCK}")
-				Send("{NUMLOCK}")
+				If GUICtrlRead($rCheckProcess) = $GUI_CHECKED Then
+					; Stop the ctrls if process is not found, to avoid infinite check ProcessExists
+					$bRunning = False
+					; If process is running (loop edit lines)
+					For $iLine = 0 To _GUICtrlEdit_GetLineCount($eProcess)
+						$sProcess = _GUICtrlEdit_GetLine($eProcess, $iLine)
+						If ProcessExists($sProcess) Then
+							__Log("Run [" & $sProcess & "]")
+							; Send ver num 2 times
+							Send("{NUMLOCK}")
+							Send("{NUMLOCK}")
+							$bRunning = True
+							ExitLoop
+						EndIf
+					Next
+				Else
+					__Log("Run")
+					; Send ver num 2 times
+					Send("{NUMLOCK}")
+					Send("{NUMLOCK}")
+				EndIf
 			EndIf
 		EndIf
 	EndIf
@@ -157,12 +162,35 @@ WEnd
 
 ;~ ========== FUNC ==========
 Func __Exit()
+	__Log("__Exiting")
 	__SaveIni()
-	__Log("Exiting")
 	Exit
 EndFunc   ;==>__Exit
+;~ https://autoitsite.wordpress.com/2020/06/20/to-check-windows-is-locked/
+Func __IsWorkstationLocked()
+	__Log("__IsWorkstationLocked")
+	Local Const $WTS_CURRENT_SERVER_HANDLE = 0
+	Local Const $WTS_CURRENT_SESSION = -1
+	Local Const $WTS_SESSION_INFO_EX = 25
+
+	Local $hWtsapi32dll = DllOpen("Wtsapi32.dll")
+	Local $result = DllCall($hWtsapi32dll, "int", "WTSQuerySessionInformation", "int", $WTS_CURRENT_SERVER_HANDLE, "int", $WTS_CURRENT_SESSION, "int", $WTS_SESSION_INFO_EX, "ptr*", 0, "dword*", 0)
+	If @error Or Not $result[0] Then Return SetError(1, 0, False)
+
+	Local $buffer_ptr = $result[4], $buffer_size = $result[5]
+	Local $buffer = DllStructCreate("uint64 SessionId;uint64 SessionState;int SessionFlags;byte[" & $buffer_size - 20 & "]", $buffer_ptr)
+	Local $isLocked = DllStructGetData($buffer, "SessionFlags")
+
+	$buffer = 0
+	DllCall($hWtsapi32dll, "int", "WTSFreeMemory", "ptr", $buffer_ptr)
+	DllClose($hWtsapi32dll)
+
+;~ 	ConsoleWrite("Is Locked ? " & $isLocked & @CRLF)
+	__Log("__IsWorkstationLocked > " & $isLocked)
+	Return $isLocked
+EndFunc   ;==>__IsWorkstationLocked
 Func __LoadIni()
-	__Log("LoadIni")
+	__Log("__LoadIni")
 	GUICtrlSetData($iMin, IniRead($sPathIni, "AutoIt_Idle", "Min", 5))
 	iMinChange()
 	GUICtrlSetState($cbEnable, IniRead($sPathIni, "AutoIt_Idle", "Enable", $GUI_CHECKED))
@@ -184,7 +212,7 @@ Func __Log($sToLog)
 	EndIf
 EndFunc   ;==>__Log
 Func __SaveIni()
-	__Log("SaveIni")
+	__Log("__SaveIni")
 	; Read multiple lines
 	Local $sOriginal = GUICtrlRead($eProcess)
 	; Convert EOLs into dummy strings
@@ -197,21 +225,18 @@ Func __SaveIni()
 	IniWrite($sPathIni, "AutoIt_Idle", "Log", GUICtrlRead($cbLog))
 EndFunc   ;==>__SaveIni
 Func __Show()
+	__Log("__Show")
 	GUISetState(@SW_SHOW)
 EndFunc   ;==>__Show
 
 Func bRefreshClick()
 	__Log("Refresh System")
 	; Screensaver
-	Local $sOutput = ""
-	_WinAPI_SystemParametersInfo($SPI_GETSCREENSAVETIMEOUT, 0, $sOutput)
-	If $sOutput = "" Then
-		$sOutput = "0"
-	EndIf
-	GUICtrlSetData($iScreensaver, $sOutput)
+	GUICtrlSetData($iScreensaver, RegRead("HKEY_CURRENT_USER\Control Panel\Desktop", "ScreenSaveTimeOut") / 60)
 
+	; Sleep & Hibernate
 	Local $iPID = Run("powercfg /Q SCHEME_CURRENT", "", @SW_HIDE, $STDOUT_CHILD)
-	$sOutput = ""
+	Local $sOutput = ""
 	While 1
 		$sOutput = StdoutRead($iPID)
 		If @error Then ExitLoop ; Exit the loop if the process closes or StdoutRead returns an error.

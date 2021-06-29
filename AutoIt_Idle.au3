@@ -121,7 +121,7 @@ If Not FileExists($sPathIni) Then
 EndIf
 
 While 1
-	Sleep(1000)
+	Sleep(1000) ; 1s
 	If GUICtrlRead($cbEnable) = $GUI_CHECKED Then
 		$iIdleTimeOld = $iIdleTime
 		$iIdleTime = _Timer_GetIdleTime() + 10 * 1000
@@ -141,19 +141,12 @@ While 1
 					For $iLine = 0 To _GUICtrlEdit_GetLineCount($eProcess)
 						$sProcess = _GUICtrlEdit_GetLine($eProcess, $iLine)
 						If ProcessExists($sProcess) Then
-							__Log("Run [" & $sProcess & "]")
-							; Send ver num 2 times
-							Send("{NUMLOCK}")
-							Send("{NUMLOCK}")
-							$bRunning = True
+							__WakeUp()
 							ExitLoop
 						EndIf
 					Next
 				Else
-					__Log("Run")
-					; Send ver num 2 times
-					Send("{NUMLOCK}")
-					Send("{NUMLOCK}")
+					__WakeUp()
 				EndIf
 			EndIf
 		EndIf
@@ -168,7 +161,7 @@ Func __Exit()
 EndFunc   ;==>__Exit
 ;~ https://autoitsite.wordpress.com/2020/06/20/to-check-windows-is-locked/
 Func __IsWorkstationLocked()
-	__Log("__IsWorkstationLocked")
+;~ 	__Log("__IsWorkstationLocked")
 	Local Const $WTS_CURRENT_SERVER_HANDLE = 0
 	Local Const $WTS_CURRENT_SESSION = -1
 	Local Const $WTS_SESSION_INFO_EX = 25
@@ -206,7 +199,14 @@ Func __LoadIni()
 	GUICtrlSetData($eProcess, $sConverted)
 EndFunc   ;==>__LoadIni
 Func __Log($sToLog)
-	_GUICtrlEdit_InsertText($eLog, _NowCalc() & " : " & $sToLog & @CRLF)
+	Local $sMsg = _NowCalc() & " : " & $sToLog & @CRLF
+	ConsoleWrite($sMsg)
+;~ 	Check if there are too many lines, then remove the 10 first lines
+;~ 	ConsoleWrite("[DEBUG] > StrLen(eLog): " & _GUICtrlEdit_GetTextLen($eLog) & @CRLF)
+	If _GUICtrlEdit_GetTextLen($eLog) > 10000 Then
+		GUICtrlSetData($eLog, StringRegExpReplace(GUICtrlRead($eLog), '.*?[\r\n]+', '', 5))
+	EndIf
+	_GUICtrlEdit_InsertText($eLog, $sMsg)
 	If GUICtrlRead($cbLog) = $GUI_CHECKED Then
 		_FileWriteLog($sPathLog, $sToLog & @CRLF)
 	EndIf
@@ -228,6 +228,33 @@ Func __Show()
 	__Log("__Show")
 	GUISetState(@SW_SHOW)
 EndFunc   ;==>__Show
+Func __WakeUp()
+	__Log("__WakeUp [NUMLOCK]")
+	; Send ver num 2 times
+	Send("{NUMLOCK}")
+	Send("{NUMLOCK}")
+	Sleep(100)
+;~ 	ConsoleWrite("[DEBUG] > " & _Timer_GetIdleTime() & @CRLF)
+	If _Timer_GetIdleTime() > 1000 Then
+		__Log("__WakeUp [NUMLOCK] Failed > [PAUSE]")
+		Send("{PAUSE}")
+		Send("{PAUSE}")
+		Sleep(100)
+		If _Timer_GetIdleTime() > 1000 Then
+			__Log("__WakeUp [PAUSE] Failed > [MouseMove]")
+			Local $CurPos = MouseGetPos()
+			MouseMove($CurPos[0] + 1, $CurPos[1])
+			MouseMove($CurPos[0], $CurPos[1])
+			Sleep(100)
+			If _Timer_GetIdleTime() > 1000 Then
+				__Log("__WakeUp [MouseMove] Failed => RUNNING SET TO FALSE")
+			EndIf
+		EndIf
+	EndIf
+
+;~ 	ConsoleWrite("[DEBUG] > __WakeUp " & _Timer_GetIdleTime() & @CRLF)
+	$bRunning = _Timer_GetIdleTime() < 1000
+EndFunc   ;==>__WakeUp
 
 Func bRefreshClick()
 	__Log("Refresh System")
